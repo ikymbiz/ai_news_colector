@@ -12,7 +12,6 @@
         .tag-badge { font-size: 9px; font-weight: 700; background-color: #f1f5f9; color: #64748b; padding: 1px 6px; border-radius: 3px; border: 1px solid #e2e8f0; }
         .important-box { background-color: #fdfaf6; border: 1px solid #fee2e2; border-radius: 6px; padding: 10px; margin-top: 12px; font-size: 0.8rem; color: #451a03; }
         
-        /* モーダル基本設定：flexクラスをHTMLから除去し、JSで制御 */
         .modal { 
             display: none; 
             position: fixed; 
@@ -49,7 +48,7 @@
 </div>
 
 <div id="deleteConfirmModal" class="modal p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 border border-slate-200 text-center">
+    <div class="bg-white rounded-2xl shadow-2xl max-sm w-full p-8 border border-slate-200 text-center">
         <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
         </div>
@@ -110,11 +109,11 @@
         </div>
 
         <div class="mb-8 bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-            <h3 class="text-xs font-black text-slate-400 mb-5 uppercase tracking-widest italic text-left text-left">🧠 AI Orchestration</h3>
-            <div class="mb-6 pb-6 border-b border-slate-50 text-left text-left">
-                <label class="text-[10px] font-bold text-slate-800 block mb-2">DEFAULT MODEL</label>
+            <h3 class="text-xs font-black text-slate-400 mb-5 uppercase tracking-widest italic text-left">🧠 AI Orchestration</h3>
+            <div class="mb-6 pb-6 border-b border-slate-50 text-left">
+                <label class="text-[10px] font-bold text-slate-800 block mb-2 uppercase tracking-tighter">Default System Model</label>
                 <div class="flex gap-2 text-left">
-                    <input id="root-model" type="text" class="flex-grow bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs font-mono outline-none">
+                    <input id="root-model" type="text" placeholder="e.g. gpt-4o-mini" class="flex-grow bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs font-mono outline-none">
                     <button onclick="saveRootModel()" class="px-4 py-2 bg-slate-800 text-white rounded font-bold text-[10px]">保存</button>
                 </div>
             </div>
@@ -239,7 +238,7 @@
             }
             return `
             <article class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden text-left ${a.is_topic ? 'is-topic' : ''}">
-                <div class="p-5 text-left text-left">
+                <div class="p-5 text-left">
                     <div class="flex justify-between items-center mb-2">
                         <div class="flex items-center gap-2">
                             <span class="text-[8px] font-black text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded tracking-widest uppercase">${a.source || 'FEED'}</span>
@@ -289,7 +288,8 @@
 
             if (promptSnap.exists()) {
                 const data = promptSnap.data();
-                // グローバル設定（Root Model, Skip Lists）の読み込み
+                
+                // グローバルモデル設定
                 const rootInp = document.getElementById('root-model');
                 if(rootInp) rootInp.value = data.model || '';
 
@@ -303,13 +303,30 @@
                 const sections = ["is_AI","category","important","summary","related","report","mail_summary","ai_filter"];
                 sections.forEach(name => {
                     const cfg = data[name] || {};
+                    // モデル名と温度を取得（存在しない場合は空文字やデフォルト0.2）
+                    const sectionModel = cfg.model || "";
+                    const sectionTemp = (cfg.temperature !== undefined) ? cfg.temperature : 0.2;
+
                     promptsContainer.insertAdjacentHTML('beforeend', `
                         <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm mb-4">
                             <div class="flex justify-between items-center mb-4 text-left">
                                 <h4 class="font-bold text-slate-800 text-[10px] uppercase tracking-widest italic">${name}</h4>
-                                <button onclick="savePrompt('${name}')" class="px-3 py-1 bg-slate-950 text-white text-[9px] font-bold rounded">SAVE</button>
+                                <button onclick="savePrompt('${name}')" class="px-3 py-1 bg-slate-950 text-white text-[9px] font-bold rounded hover:bg-black transition">SAVE ALL</button>
                             </div>
-                            <textarea id="prompt-${name}" rows="4" class="w-full border-none rounded-lg p-3 text-[11px] text-slate-600 bg-slate-50 outline-none leading-relaxed text-left">${cfg.prompt || ''}</textarea>
+                            
+                            <div class="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="text-[8px] font-black text-slate-400 uppercase mb-1 block">Model Override</label>
+                                    <input id="model-${name}" type="text" value="${sectionModel}" placeholder="Default" class="w-full bg-slate-50 border border-slate-100 rounded px-2 py-1.5 text-[10px] font-mono outline-none">
+                                </div>
+                                <div>
+                                    <label class="text-[8px] font-black text-slate-400 uppercase mb-1 block">Temperature</label>
+                                    <input id="temp-${name}" type="number" step="0.1" min="0" max="2" value="${sectionTemp}" class="w-full bg-slate-50 border border-slate-100 rounded px-2 py-1.5 text-[10px] font-mono outline-none">
+                                </div>
+                            </div>
+
+                            <label class="text-[8px] font-black text-slate-400 uppercase mb-1 block">System Instruction</label>
+                            <textarea id="prompt-${name}" rows="5" class="w-full border-none rounded-lg p-3 text-[11px] text-slate-600 bg-slate-50 outline-none leading-relaxed text-left">${cfg.prompt || ''}</textarea>
                         </div>`);
                 });
             }
@@ -339,7 +356,7 @@
     window.saveRootModel = async () => {
         const model = document.getElementById('root-model').value.trim();
         await setDoc(doc(db, "configs", "prompt"), { model }, { merge: true });
-        showToast("✅ モデル設定を保存しました");
+        showToast("✅ デフォルトモデル設定を保存しました");
     };
 
     window.saveList = async (key) => {
@@ -351,9 +368,19 @@
 
     window.savePrompt = async (name) => {
         const prompt = document.getElementById(`prompt-${name}`).value;
-        const d = {}; d[name] = { prompt, temperature: 0.2 };
+        const model = document.getElementById(`model-${name}`).value.trim();
+        const temperature = parseFloat(document.getElementById(`temp-${name}`).value);
+        
+        // オブジェクトにまとめて保存
+        const d = {}; 
+        d[name] = { 
+            prompt: prompt, 
+            model: model, 
+            temperature: isNaN(temperature) ? 0.2 : temperature 
+        };
+        
         await setDoc(doc(db, "configs", "prompt"), d, { merge: true });
-        showToast(`✅ ${name} プロンプトを保存しました`);
+        showToast(`✅ ${name} の設定を保存しました`);
     };
 
     window.updateTopic = async (id, current) => { await updateDoc(doc(db, "articles", id), { is_topic: !current, updated_at: serverTimestamp() }); };
