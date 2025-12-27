@@ -83,12 +83,22 @@
         <div class="bg-white p-2 rounded-lg shadow-sm mb-5 flex gap-3 items-center border border-slate-200">
             <input type="text" id="searchBox" placeholder="キーワード検索..." class="flex-grow bg-transparent border-none px-3 py-1 text-sm outline-none placeholder:text-slate-300">
             <label class="flex items-center gap-2 px-3 py-1 text-[11px] text-slate-500 font-bold border-l border-slate-100 cursor-pointer">
-                <input type="checkbox" id="topicOnly" class="w-3.5 h-3.5 rounded text-blue-600 border-slate-300"> トピックのみ
+                <input type="checkbox" id="topicOnly" class="w-3.5 h-3.5 rounded text-blue-600 border-slate-300" checked> トピックのみ
             </label>
         </div>
+        
         <div id="articles-container" class="space-y-4 text-left">
             <div class="text-center py-20 text-slate-300 text-sm italic animate-pulse font-medium">読み込み中...</div>
         </div>
+
+        <div id="sentinel" class="py-12 flex flex-col items-center justify-center gap-3">
+    <div id="loader-spinner" class="w-5 h-5 border-2 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
+    <span id="loader-text" class="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em]">Synchronizing Database</span>
+    
+<div class="mt-1 text-[9px] font-bold text-slate-300 tracking-[0.1em] uppercase">
+    © AI News Database, 2025
+</div>
+</div>
     </div>
 </div>
 
@@ -132,7 +142,6 @@
                 </div>
             </div>
         </div>
-
         <div id="prompts-container" class="space-y-4 text-left"></div>
     </div>
 </div>
@@ -144,6 +153,9 @@
     let db = null;
     let allArticles = [];
     let pendingDeleteId = null;
+    let currentLimit = 30;
+    let unsubscribe = null;
+    let isFetching = false;
 
     const modal = document.getElementById('configModal');
     const deleteModal = document.getElementById('deleteConfirmModal');
@@ -151,6 +163,15 @@
     const statusBadge = document.getElementById('statusBadge');
     const rssList = document.getElementById('rss-list');
     const promptsContainer = document.getElementById('prompts-container');
+    const loaderSpinner = document.getElementById('loader-spinner');
+    const loaderText = document.getElementById('loader-text');
+
+    // --- Toast ---
+    const showToast = (msg) => {
+        const t = document.getElementById('toast'); t.innerText = msg;
+        t.classList.replace('translate-y-20', 'translate-y-0'); t.classList.replace('opacity-0', 'opacity-100');
+        setTimeout(() => { t.classList.replace('translate-y-0', 'translate-y-20'); t.classList.replace('opacity-100', 'opacity-0'); }, 3000);
+    };
 
     // --- UI Controls ---
     window.openSettings = () => {
@@ -163,7 +184,7 @@
         document.getElementById('settings-screen').classList.remove('active');
     };
 
-    // --- ID解読ロジック ---
+    // --- Firebase Logic ---
     const decodeToken = (token) => {
         if (!token || !token.startsWith("NC_v1_")) return token;
         try {
@@ -173,11 +194,9 @@
         } catch (e) { return token; }
     };
 
-    // --- Firebase Init ---
     const initApp = () => {
         const stored = localStorage.getItem('firebase_config');
         if (!stored) { modal.style.display = 'flex'; return; }
-        
         const raw = decodeToken(stored);
         try {
             const extract = (k) => {
@@ -192,14 +211,30 @@
             db = initializeFirestore(app, { ignoreUndefinedProperties: true });
             statusBadge.innerText = '● LIVE';
             statusBadge.className = 'px-3 py-1 rounded border border-blue-500/50 text-[9px] font-black bg-blue-500/10 text-blue-400 tracking-widest pulse-live cursor-pointer uppercase';
+            
             startListening();
+            initInfiniteScroll();
         } catch (e) { statusBadge.innerText = 'ERROR'; modal.style.display = 'flex'; }
     };
 
     const startListening = () => {
-        const q = query(collection(db, "articles"), orderBy("published_at", "desc"), limit(100));
-        onSnapshot(q, (snapshot) => {
-            allArticles = snapshot.docs.map(d => {
+        if (unsubscribe) unsubscribe();
+        const q = query(collection(db, "articles"), orderBy("published_at", "desc"), limit(currentLimit));
+        
+        unsubscribe = onSnapshot(q, (snapshot) => {
+            const docs = snapshot.docs;
+            
+            // 全件読み込み完了の判定
+            if (docs.length < currentLimit) {
+                loaderSpinner.style.display = 'none';
+                loaderText.innerText = "End of Database";
+                loaderText.classList.replace('text-slate-400', 'text-slate-300');
+            } else {
+                loaderSpinner.style.display = 'block';
+                loaderText.innerText = "Synchronizing Database";
+            }
+
+            allArticles = docs.map(d => {
                 const data = d.data();
                 const rawImp = (data.important || "").trim();
                 let impInfo = null;
@@ -214,8 +249,21 @@
                     is_topic: data.is_topic || false
                 };
             }).filter(d => !d.is_deleted);
+            
             renderArticles();
+            isFetching = false;
         });
+    };
+
+    const initInfiniteScroll = () => {
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && !isFetching && allArticles.length >= currentLimit) {
+                isFetching = true;
+                currentLimit += 30;
+                startListening();
+            }
+        }, { threshold: 0.1 });
+        observer.observe(document.getElementById('sentinel'));
     };
 
     const renderArticles = () => {
@@ -263,7 +311,10 @@
         }).join('');
     };
 
-    // --- Confirmation / Delete ---
+    // --- Actions ---
+    window.updateTopic = async (id, current) => { 
+        await updateDoc(doc(db, "articles", id), { is_topic: !current, updated_at: serverTimestamp() }); 
+    };
     window.confirmDelete = (id) => { pendingDeleteId = id; deleteModal.style.display = 'flex'; };
     document.getElementById('cancelDeleteBtn').onclick = () => { deleteModal.style.display = 'none'; pendingDeleteId = null; };
     document.getElementById('executeDeleteBtn').onclick = async () => {
@@ -278,42 +329,34 @@
     window.loadSettings = async () => {
         if (!db) return;
         try {
-            const promptSnap = await getDoc(doc(db, "configs", "prompt"));
-            const rssSnap = await getDoc(doc(db, "configs", "rss_sources"));
-
+            const [promptSnap, rssSnap] = await Promise.all([
+                getDoc(doc(db, "configs", "prompt")),
+                getDoc(doc(db, "configs", "rss_sources"))
+            ]);
             if (rssSnap.exists()) {
                 rssList.innerHTML = '';
                 (rssSnap.data().feeds || []).forEach(f => addFeedRow(f.name, f.url));
             }
-
             if (promptSnap.exists()) {
                 const data = promptSnap.data();
-                
-                // グローバルモデル設定
                 const rootInp = document.getElementById('root-model');
                 if(rootInp) rootInp.value = data.model || '';
-
                 ['skip_categories', 'skip_feeds', 'override_categories'].forEach(key => {
                     const el = document.getElementById(`list-${key}`);
                     if (el) el.value = (data[key] || []).join('\n');
                 });
-
-                // 個別プロンプト設定の生成
                 promptsContainer.innerHTML = '';
                 const sections = ["is_AI","category","important","summary","related","report","mail_summary","ai_filter"];
                 sections.forEach(name => {
                     const cfg = data[name] || {};
-                    // モデル名と温度を取得（存在しない場合は空文字やデフォルト0.2）
                     const sectionModel = cfg.model || "";
                     const sectionTemp = (cfg.temperature !== undefined) ? cfg.temperature : 0.2;
-
                     promptsContainer.insertAdjacentHTML('beforeend', `
                         <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm mb-4">
                             <div class="flex justify-between items-center mb-4 text-left">
                                 <h4 class="font-bold text-slate-800 text-[10px] uppercase tracking-widest italic">${name}</h4>
                                 <button onclick="savePrompt('${name}')" class="px-3 py-1 bg-slate-950 text-white text-[9px] font-bold rounded hover:bg-black transition">SAVE ALL</button>
                             </div>
-                            
                             <div class="grid grid-cols-2 gap-4 mb-4">
                                 <div>
                                     <label class="text-[8px] font-black text-slate-400 uppercase mb-1 block">Model Override</label>
@@ -324,16 +367,12 @@
                                     <input id="temp-${name}" type="number" step="0.1" min="0" max="2" value="${sectionTemp}" class="w-full bg-slate-50 border border-slate-100 rounded px-2 py-1.5 text-[10px] font-mono outline-none">
                                 </div>
                             </div>
-
                             <label class="text-[8px] font-black text-slate-400 uppercase mb-1 block">System Instruction</label>
                             <textarea id="prompt-${name}" rows="5" class="w-full border-none rounded-lg p-3 text-[11px] text-slate-600 bg-slate-50 outline-none leading-relaxed text-left">${cfg.prompt || ''}</textarea>
                         </div>`);
                 });
             }
-        } catch (e) { 
-            console.error(e);
-            showToast("設定の読み込みに失敗しました"); 
-        }
+        } catch (e) { console.error(e); showToast("設定の読み込みに失敗しました"); }
     };
 
     // --- Save Actions ---
@@ -343,7 +382,6 @@
         div.innerHTML = `<input type="text" name="f-name" value="${name}" placeholder="Name" class="flex-1 border-none rounded px-2 py-1.5 text-[11px] outline-none shadow-sm"><input type="url" name="f-url" value="${url}" placeholder="URL" class="flex-[2] border-none rounded px-2 py-1.5 text-[11px] font-mono outline-none shadow-sm"><button onclick="this.parentElement.remove()" class="text-slate-300 hover:text-red-500 px-1 text-xs">✕</button>`;
         rssList.appendChild(div);
     };
-
     window.saveAllRss = async () => {
         const feeds = Array.from(rssList.querySelectorAll('div')).map(row => ({
             name: row.querySelector("input[name='f-name']").value.trim(),
@@ -352,50 +390,35 @@
         await setDoc(doc(db, "configs", "rss_sources"), { feeds }, { merge: true });
         showToast("✅ RSSを保存しました");
     };
-
     window.saveRootModel = async () => {
         const model = document.getElementById('root-model').value.trim();
         await setDoc(doc(db, "configs", "prompt"), { model }, { merge: true });
         showToast("✅ デフォルトモデル設定を保存しました");
     };
-
     window.saveList = async (key) => {
         const val = document.getElementById(`list-${key}`).value.split('\n').filter(l => l.trim());
         const d = {}; d[key] = val;
         await setDoc(doc(db, "configs", "prompt"), d, { merge: true });
         showToast(`✅ ${key} を更新しました`);
     };
-
     window.savePrompt = async (name) => {
         const prompt = document.getElementById(`prompt-${name}`).value;
         const model = document.getElementById(`model-${name}`).value.trim();
         const temperature = parseFloat(document.getElementById(`temp-${name}`).value);
-        
-        // オブジェクトにまとめて保存
-        const d = {}; 
-        d[name] = { 
-            prompt: prompt, 
-            model: model, 
-            temperature: isNaN(temperature) ? 0.2 : temperature 
-        };
-        
+        const d = {}; d[name] = { prompt, model, temperature: isNaN(temperature) ? 0.2 : temperature };
         await setDoc(doc(db, "configs", "prompt"), d, { merge: true });
         showToast(`✅ ${name} の設定を保存しました`);
     };
 
-    window.updateTopic = async (id, current) => { await updateDoc(doc(db, "articles", id), { is_topic: !current, updated_at: serverTimestamp() }); };
-
-    const showToast = (msg) => {
-        const t = document.getElementById('toast'); t.innerText = msg;
-        t.classList.replace('translate-y-20', 'translate-y-0'); t.classList.replace('opacity-0', 'opacity-100');
-        setTimeout(() => { t.classList.replace('translate-y-0', 'translate-y-20'); t.classList.replace('opacity-100', 'opacity-0'); }, 3000);
-    };
-
+    // --- Init ---
     document.getElementById('saveConfigBtn').onclick = () => {
         const val = document.getElementById('configInput').value.trim();
         if (val) { localStorage.setItem('firebase_config', val); location.reload(); }
     };
-    document.getElementById('statusBadge').onclick = () => { configInput.value = localStorage.getItem('firebase_config') || ""; modal.style.display = 'flex'; };
+    document.getElementById('statusBadge').onclick = () => { 
+        document.getElementById('configInput').value = localStorage.getItem('firebase_config') || ""; 
+        modal.style.display = 'flex'; 
+    };
     document.getElementById('closeModalBtn').onclick = () => modal.style.display = 'none';
     document.getElementById('searchBox').oninput = renderArticles;
     document.getElementById('topicOnly').onchange = renderArticles;
