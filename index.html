@@ -11,23 +11,23 @@
         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .tag-badge { font-size: 9px; font-weight: 700; background-color: #f1f5f9; color: #64748b; padding: 1px 6px; border-radius: 3px; border: 1px solid #e2e8f0; }
         .important-box { background-color: #fdfaf6; border: 1px solid #fee2e2; border-radius: 6px; padding: 10px; margin-top: 12px; font-size: 0.8rem; color: #451a03; }
-        
-        .modal { 
-            display: none; 
-            position: fixed; 
-            z-index: 100; 
-            left: 0; 
-            top: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: rgba(0,0,0,0.6); 
-            backdrop-filter: blur(4px); 
-            align-items: center; 
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            align-items: center;
             justify-content: center;
         }
         #settings-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 50; overflow-y: auto; background-color: #f8fafc; }
         #settings-screen.active { display: block; }
-        
+
         @keyframes pulse-dot { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
         .pulse-live { animation: pulse-dot 2s infinite; }
     </style>
@@ -86,7 +86,7 @@
                 <input type="checkbox" id="topicOnly" class="w-3.5 h-3.5 rounded text-blue-600 border-slate-300" checked> トピックのみ
             </label>
         </div>
-        
+
         <div id="articles-container" class="space-y-4 text-left">
             <div class="text-center py-20 text-slate-300 text-sm italic animate-pulse font-medium">読み込み中...</div>
         </div>
@@ -107,7 +107,7 @@
             <h2 class="text-xl font-bold text-slate-800 italic uppercase tracking-tighter">System Settings</h2>
             <button onclick="closeSettings()" class="px-5 py-2 bg-slate-950 text-white rounded-lg font-bold text-xs hover:bg-black transition">戻る</button>
         </div>
-        
+
         <div class="mb-8 bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
             <h3 class="text-xs font-black text-slate-400 mb-5 uppercase tracking-widest italic text-left">📰 Feed Management</h3>
             <div id="rss-list" class="space-y-2"></div>
@@ -183,10 +183,25 @@
         document.getElementById('settings-screen').classList.remove('active');
     };
 
-    // --- アコーディオンの開閉制御 ---
+    // --- アコーディオンの開閉制御（Related） ---
     window.toggleRelated = (id) => {
         const content = document.getElementById(`related-content-${id}`);
         const arrow = document.getElementById(`arrow-${id}`);
+        if (!content || !arrow) return;
+        if (content.classList.contains('hidden')) {
+            content.classList.remove('hidden');
+            arrow.classList.add('rotate-180');
+        } else {
+            content.classList.add('hidden');
+            arrow.classList.remove('rotate-180');
+        }
+    };
+
+    // --- アコーディオンの開閉制御（Insight Report） ---
+    window.toggleInsight = (id) => {
+        const content = document.getElementById(`insight-content-${id}`);
+        const arrow = document.getElementById(`insight-arrow-${id}`);
+        if (!content || !arrow) return;
         if (content.classList.contains('hidden')) {
             content.classList.remove('hidden');
             arrow.classList.add('rotate-180');
@@ -206,6 +221,19 @@
         } catch (e) { return token; }
     };
 
+    // --- JSON文字列のクリーンアップ（```json ... ``` などに対応）---
+    const sanitizeJsonString = (s) => {
+        if (!s) return "";
+        let t = String(s).trim();
+        // remove code fences like ```json ... ```
+        if (t.startsWith("```")) {
+            t = t.replace(/^```[a-zA-Z]*\s*/m, "");
+            t = t.replace(/```$/m, "");
+            t = t.trim();
+        }
+        return t;
+    };
+
     const initApp = () => {
         const stored = localStorage.getItem('firebase_config');
         if (!stored) { modal.style.display = 'flex'; return; }
@@ -223,7 +251,7 @@
             db = initializeFirestore(app, { ignoreUndefinedProperties: true });
             statusBadge.innerText = '● LIVE';
             statusBadge.className = 'px-3 py-1 rounded border border-blue-500/50 text-[9px] font-black bg-blue-500/10 text-blue-400 tracking-widest pulse-live cursor-pointer uppercase';
-            
+
             startListening();
             initInfiniteScroll();
         } catch (e) { statusBadge.innerText = 'ERROR'; modal.style.display = 'flex'; }
@@ -232,10 +260,10 @@
     const startListening = () => {
         if (unsubscribe) unsubscribe();
         const q = query(collection(db, "articles"), orderBy("published_at", "desc"), limit(currentLimit));
-        
+
         unsubscribe = onSnapshot(q, (snapshot) => {
             const docs = snapshot.docs;
-            
+
             if (docs.length < currentLimit) {
                 loaderSpinner.style.display = 'none';
                 loaderText.innerText = "End of Database";
@@ -247,13 +275,13 @@
 
             allArticles = docs.map(d => {
                 const data = d.data();
-                
-                // --- JSONのパース ---
-                const rawImp = (data.important || "").trim();
+
+                // --- JSONのパース（important: ```json ... ``` にも対応） ---
+                const rawImp = sanitizeJsonString((data.important || "").trim());
                 let impInfo = null;
                 if (rawImp.startsWith('{')) { try { impInfo = JSON.parse(rawImp); } catch(e) {} }
 
-                const rawRelated = (data.related || "").trim();
+                const rawRelated = sanitizeJsonString((data.related || "").trim());
                 let relatedInfo = null;
                 if (rawRelated.startsWith('[')) { try { relatedInfo = JSON.parse(rawRelated); } catch(e) {} }
 
@@ -268,7 +296,7 @@
                     is_topic: data.is_topic || false
                 };
             }).filter(d => !d.is_deleted);
-            
+
             renderArticles();
             isFetching = false;
         });
@@ -298,12 +326,41 @@
         }
         container.innerHTML = filtered.map(a => {
             let domain = ""; try { domain = new URL(a.url).hostname; } catch(e) {}
-            
+
             // --- 重要情報セクション ---
             let importantHtml = "";
             if (a.importantInfo && a.importantInfo.flag) {
                 const detail = a.importantInfo.articles?.[0] || {};
-                importantHtml = `<div class="important-box text-left"><div class="font-bold leading-snug text-slate-900 text-xs mb-1 tracking-tight">📌 ${detail.extraction_reason || 'AI要約あり'}</div></div>`;
+                importantHtml = `
+                    <div class="important-box text-left">
+                        <div class="font-bold leading-snug text-slate-900 text-xs mb-1 tracking-tight">
+                            📌 ${detail.extraction_reason || 'AI要約あり'}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // --- Insight Report（report）: トピックなら表示（アコーディオン） ---
+            let reportHtml = "";
+            const reportText = (a.report || "").trim();
+            if (a.is_topic && reportText) {
+                const safeReport = reportText.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                reportHtml = `
+                    <div class="mt-4 border border-amber-200 rounded-lg overflow-hidden bg-amber-50/60">
+                        <button onclick="window.toggleInsight('${a.id}')" class="w-full flex justify-between items-center px-4 py-2.5 hover:bg-amber-50 transition-colors">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[9px] font-black text-amber-700 uppercase tracking-widest italic">Strategic Insight</span>
+                                <span class="bg-amber-200/60 text-amber-800 text-[8px] font-bold px-1.5 rounded-full">REPORT</span>
+                            </div>
+                            <svg id="insight-arrow-${a.id}" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-amber-700/60 transform transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div id="insight-content-${a.id}" class="hidden px-4 pb-4 pt-2 bg-white border-t border-amber-100">
+                            <div class="text-[11px] text-slate-700 leading-relaxed whitespace-pre-line">${safeReport}</div>
+                        </div>
+                    </div>
+                `;
             }
 
             // --- 関連記事アコーディオン ---
@@ -320,7 +377,7 @@
                         <p class="text-[10px] text-slate-500 leading-relaxed pl-6">${rel.内容}</p>
                     </li>
                 `).join('');
-                
+
                 relatedHtml = `
                     <div class="mt-4 border border-slate-200 rounded-lg overflow-hidden bg-slate-50/50">
                         <button onclick="window.toggleRelated('${a.id}')" class="w-full flex justify-between items-center px-4 py-2.5 hover:bg-slate-100 transition-colors">
@@ -328,7 +385,7 @@
                                 <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest italic">Related Intelligence</span>
                                 <span class="bg-blue-100 text-blue-600 text-[8px] font-bold px-1.5 rounded-full">${a.relatedInfo.length}</span>
                             </div>
-                            <svg id="arrow-${a.id}" xmlns="http://www.w3.org/2000/center" class="h-3 w-3 text-slate-400 transform transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg id="arrow-${a.id}" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-slate-400 transform transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
@@ -354,8 +411,11 @@
                     </h2>
                     <p class="text-slate-500 text-[11px] mb-3 leading-relaxed line-clamp-2 font-medium text-left">${a.displaySummary}</p>
                     <div class="flex flex-wrap gap-1.5 mb-2">${a.category.map(cat => `<span class="tag-badge">#${cat}</span>`).join('')}</div>
+
                     ${importantHtml}
+                    ${reportHtml}
                     ${relatedHtml}
+
                     <div class="flex items-center justify-between mt-4 pt-4 border-t border-slate-50">
                         <div class="flex gap-4">
                             <button onclick="window.updateTopic('${a.id}', ${a.is_topic})" class="text-[9px] font-bold tracking-widest ${a.is_topic ? 'text-blue-600' : 'text-slate-300 hover:text-slate-500'}">${a.is_topic ? '★ TOPIC' : '☆ MARK'}</button>
@@ -368,8 +428,8 @@
     };
 
     // --- Actions ---
-    window.updateTopic = async (id, current) => { 
-        await updateDoc(doc(db, "articles", id), { is_topic: !current, updated_at: serverTimestamp() }); 
+    window.updateTopic = async (id, current) => {
+        await updateDoc(doc(db, "articles", id), { is_topic: !current, updated_at: serverTimestamp() });
     };
     window.confirmDelete = (id) => { pendingDeleteId = id; deleteModal.style.display = 'flex'; };
     document.getElementById('cancelDeleteBtn').onclick = () => { deleteModal.style.display = 'none'; pendingDeleteId = null; };
@@ -471,9 +531,9 @@
         const val = document.getElementById('configInput').value.trim();
         if (val) { localStorage.setItem('firebase_config', val); location.reload(); }
     };
-    document.getElementById('statusBadge').onclick = () => { 
-        document.getElementById('configInput').value = localStorage.getItem('firebase_config') || ""; 
-        modal.style.display = 'flex'; 
+    document.getElementById('statusBadge').onclick = () => {
+        document.getElementById('configInput').value = localStorage.getItem('firebase_config') || "";
+        modal.style.display = 'flex';
     };
     document.getElementById('closeModalBtn').onclick = () => modal.style.display = 'none';
     document.getElementById('searchBox').oninput = renderArticles;
