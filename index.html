@@ -92,13 +92,12 @@
         </div>
 
         <div id="sentinel" class="py-12 flex flex-col items-center justify-center gap-3">
-    <div id="loader-spinner" class="w-5 h-5 border-2 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
-    <span id="loader-text" class="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em]">Synchronizing Database</span>
-    
-<div class="mt-1 text-[9px] font-bold text-slate-300 tracking-[0.1em] uppercase">
-    © AI News Database, 2025
-</div>
-</div>
+            <div id="loader-spinner" class="w-5 h-5 border-2 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
+            <span id="loader-text" class="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em]">Synchronizing Database</span>
+            <div class="mt-1 text-[9px] font-bold text-slate-300 tracking-[0.1em] uppercase">
+                © AI News Database, 2025
+            </div>
+        </div>
     </div>
 </div>
 
@@ -184,6 +183,19 @@
         document.getElementById('settings-screen').classList.remove('active');
     };
 
+    // --- アコーディオンの開閉制御 ---
+    window.toggleRelated = (id) => {
+        const content = document.getElementById(`related-content-${id}`);
+        const arrow = document.getElementById(`arrow-${id}`);
+        if (content.classList.contains('hidden')) {
+            content.classList.remove('hidden');
+            arrow.classList.add('rotate-180');
+        } else {
+            content.classList.add('hidden');
+            arrow.classList.remove('rotate-180');
+        }
+    };
+
     // --- Firebase Logic ---
     const decodeToken = (token) => {
         if (!token || !token.startsWith("NC_v1_")) return token;
@@ -224,7 +236,6 @@
         unsubscribe = onSnapshot(q, (snapshot) => {
             const docs = snapshot.docs;
             
-            // 全件読み込み完了の判定
             if (docs.length < currentLimit) {
                 loaderSpinner.style.display = 'none';
                 loaderText.innerText = "End of Database";
@@ -236,15 +247,23 @@
 
             allArticles = docs.map(d => {
                 const data = d.data();
+                
+                // --- JSONのパース ---
                 const rawImp = (data.important || "").trim();
                 let impInfo = null;
                 if (rawImp.startsWith('{')) { try { impInfo = JSON.parse(rawImp); } catch(e) {} }
+
+                const rawRelated = (data.related || "").trim();
+                let relatedInfo = null;
+                if (rawRelated.startsWith('[')) { try { relatedInfo = JSON.parse(rawRelated); } catch(e) {} }
+
                 return {
                     id: d.id, ...data,
                     title: (data.title || "Untitled").replace(/<[^>]*>?/gm, ''),
                     displaySummary: (data.summary || data.report || data.body || "").replace(/<[^>]*>?/gm, ''),
                     category: Array.isArray(data.category) ? data.category : [],
                     importantInfo: impInfo,
+                    relatedInfo: relatedInfo,
                     is_deleted: data.is_deleted || false,
                     is_topic: data.is_topic || false
                 };
@@ -279,11 +298,47 @@
         }
         container.innerHTML = filtered.map(a => {
             let domain = ""; try { domain = new URL(a.url).hostname; } catch(e) {}
+            
+            // --- 重要情報セクション ---
             let importantHtml = "";
             if (a.importantInfo && a.importantInfo.flag) {
                 const detail = a.importantInfo.articles?.[0] || {};
                 importantHtml = `<div class="important-box text-left"><div class="font-bold leading-snug text-slate-900 text-xs mb-1 tracking-tight">📌 ${detail.extraction_reason || 'AI要約あり'}</div></div>`;
             }
+
+            // --- 関連記事アコーディオン ---
+            let relatedHtml = "";
+            if (a.relatedInfo && Array.isArray(a.relatedInfo) && a.relatedInfo.length > 0) {
+                const links = a.relatedInfo.map(rel => `
+                    <li class="mb-3 last:mb-0 pb-3 border-b border-slate-100 last:border-0 group">
+                        <a href="${rel.URL}" target="_blank" class="flex items-start gap-2 text-blue-600 font-bold hover:text-blue-800 transition-colors block mb-1 tracking-tight">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-400 group-hover:text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                            <span class="text-[11px] leading-tight">${rel.見出し}</span>
+                        </a>
+                        <p class="text-[10px] text-slate-500 leading-relaxed pl-6">${rel.内容}</p>
+                    </li>
+                `).join('');
+                
+                relatedHtml = `
+                    <div class="mt-4 border border-slate-200 rounded-lg overflow-hidden bg-slate-50/50">
+                        <button onclick="window.toggleRelated('${a.id}')" class="w-full flex justify-between items-center px-4 py-2.5 hover:bg-slate-100 transition-colors">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest italic">Related Intelligence</span>
+                                <span class="bg-blue-100 text-blue-600 text-[8px] font-bold px-1.5 rounded-full">${a.relatedInfo.length}</span>
+                            </div>
+                            <svg id="arrow-${a.id}" xmlns="http://www.w3.org/2000/center" class="h-3 w-3 text-slate-400 transform transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div id="related-content-${a.id}" class="hidden px-4 pb-4 pt-1 bg-white border-t border-slate-100">
+                            <ul class="list-none m-0">${links}</ul>
+                        </div>
+                    </div>
+                `;
+            }
+
             return `
             <article class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden text-left ${a.is_topic ? 'is-topic' : ''}">
                 <div class="p-5 text-left">
@@ -300,6 +355,7 @@
                     <p class="text-slate-500 text-[11px] mb-3 leading-relaxed line-clamp-2 font-medium text-left">${a.displaySummary}</p>
                     <div class="flex flex-wrap gap-1.5 mb-2">${a.category.map(cat => `<span class="tag-badge">#${cat}</span>`).join('')}</div>
                     ${importantHtml}
+                    ${relatedHtml}
                     <div class="flex items-center justify-between mt-4 pt-4 border-t border-slate-50">
                         <div class="flex gap-4">
                             <button onclick="window.updateTopic('${a.id}', ${a.is_topic})" class="text-[9px] font-bold tracking-widest ${a.is_topic ? 'text-blue-600' : 'text-slate-300 hover:text-slate-500'}">${a.is_topic ? '★ TOPIC' : '☆ MARK'}</button>
