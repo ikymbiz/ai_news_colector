@@ -152,9 +152,10 @@
     let db = null;
     let allArticles = [];
     let pendingDeleteId = null;
-    let currentLimit = 30;
+    let currentLimit = 30; // 初回読み込み件数
     let unsubscribe = null;
     let isFetching = false;
+    let hasMore = true; // 追加データがあるかどうかの判定用
 
     const modal = document.getElementById('configModal');
     const deleteModal = document.getElementById('deleteConfirmModal');
@@ -183,32 +184,21 @@
         document.getElementById('settings-screen').classList.remove('active');
     };
 
-    // --- アコーディオンの開閉制御（Related） ---
+    // --- アコーディオンの開閉制御 ---
     window.toggleRelated = (id) => {
         const content = document.getElementById(`related-content-${id}`);
         const arrow = document.getElementById(`arrow-${id}`);
         if (!content || !arrow) return;
-        if (content.classList.contains('hidden')) {
-            content.classList.remove('hidden');
-            arrow.classList.add('rotate-180');
-        } else {
-            content.classList.add('hidden');
-            arrow.classList.remove('rotate-180');
-        }
+        content.classList.toggle('hidden');
+        arrow.classList.toggle('rotate-180');
     };
 
-    // --- アコーディオンの開閉制御（Insight Report） ---
     window.toggleInsight = (id) => {
         const content = document.getElementById(`insight-content-${id}`);
         const arrow = document.getElementById(`insight-arrow-${id}`);
         if (!content || !arrow) return;
-        if (content.classList.contains('hidden')) {
-            content.classList.remove('hidden');
-            arrow.classList.add('rotate-180');
-        } else {
-            content.classList.add('hidden');
-            arrow.classList.remove('rotate-180');
-        }
+        content.classList.toggle('hidden');
+        arrow.classList.toggle('rotate-180');
     };
 
     // --- Firebase Logic ---
@@ -221,11 +211,9 @@
         } catch (e) { return token; }
     };
 
-    // --- JSON文字列のクリーンアップ（```json ... ``` などに対応）---
     const sanitizeJsonString = (s) => {
         if (!s) return "";
         let t = String(s).trim();
-        // remove code fences like ```json ... ```
         if (t.startsWith("```")) {
             t = t.replace(/^```[a-zA-Z]*\s*/m, "");
             t = t.replace(/```$/m, "");
@@ -265,18 +253,43 @@
             const docs = snapshot.docs;
 
             if (docs.length < currentLimit) {
+                hasMore = false;
                 loaderSpinner.style.display = 'none';
                 loaderText.innerText = "End of Database";
                 loaderText.classList.replace('text-slate-400', 'text-slate-300');
             } else {
+                hasMore = true;
                 loaderSpinner.style.display = 'block';
                 loaderText.innerText = "Synchronizing Database";
             }
 
             allArticles = docs.map(d => {
                 const data = d.data();
+                
+                // --- カテゴリーの解析ロジックを強化 ---
+                let categories = [];
+                let rawCategory = data.category;
 
-                // --- JSONのパース（important: ```json ... ``` にも対応） ---
+                if (Array.isArray(rawCategory)) {
+                    // すでに配列ならそのまま
+                    categories = rawCategory;
+                } else if (typeof rawCategory === 'string') {
+                    const trimmed = rawCategory.trim();
+                    if (trimmed.startsWith('{')) {
+                        // JSON文字列（画像の状態）ならパースする
+                        try {
+                            const parsed = JSON.parse(trimmed);
+                            // {"category": [...]} または {"categories": [...]} の中身を取得
+                            categories = parsed.category || parsed.categories || [];
+                        } catch (e) {
+                            categories = [trimmed]; // パース失敗時は文字列として保持
+                        }
+                    } else if (trimmed !== "") {
+                        // 通常のカンマ区切り文字列の場合
+                        categories = trimmed.split(/[,、\s]+/).map(c => c.trim());
+                    }
+                }
+
                 const rawImp = sanitizeJsonString((data.important || "").trim());
                 let impInfo = null;
                 if (rawImp.startsWith('{')) { try { impInfo = JSON.parse(rawImp); } catch(e) {} }
@@ -289,7 +302,7 @@
                     id: d.id, ...data,
                     title: (data.title || "Untitled").replace(/<[^>]*>?/gm, ''),
                     displaySummary: (data.summary || data.report || data.body || "").replace(/<[^>]*>?/gm, ''),
-                    category: Array.isArray(data.category) ? data.category : [],
+                    category: Array.isArray(categories) ? categories : [categories], // 必ず配列にする
                     importantInfo: impInfo,
                     relatedInfo: relatedInfo,
                     is_deleted: data.is_deleted || false,
@@ -299,17 +312,21 @@
 
             renderArticles();
             isFetching = false;
+        }, (error) => {
+            console.error("Snapshot error:", error);
+            isFetching = false;
         });
     };
 
     const initInfiniteScroll = () => {
         const observer = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting && !isFetching && allArticles.length >= currentLimit) {
+            // 下端に到達し、かつ読み込み中でなく、まだ続きがある場合
+            if (entries[0].isIntersecting && !isFetching && hasMore) {
                 isFetching = true;
                 currentLimit += 30;
                 startListening();
             }
-        }, { threshold: 0.1 });
+        }, { threshold: 0.1, rootMargin: '100px' });
         observer.observe(document.getElementById('sentinel'));
     };
 
@@ -327,7 +344,6 @@
         container.innerHTML = filtered.map(a => {
             let domain = ""; try { domain = new URL(a.url).hostname; } catch(e) {}
 
-            // --- 重要情報セクション ---
             let importantHtml = "";
             if (a.importantInfo && a.importantInfo.flag) {
                 const detail = a.importantInfo.articles?.[0] || {};
@@ -336,11 +352,9 @@
                         <div class="font-bold leading-snug text-slate-900 text-xs mb-1 tracking-tight">
                             📌 ${detail.extraction_reason || 'AI要約あり'}
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }
 
-            // --- Insight Report（report）: トピックなら表示（アコーディオン） ---
             let reportHtml = "";
             const reportText = (a.report || "").trim();
             if (a.is_topic && reportText) {
@@ -352,31 +366,28 @@
                                 <span class="text-[9px] font-black text-amber-700 uppercase tracking-widest italic">Strategic Insight</span>
                                 <span class="bg-amber-200/60 text-amber-800 text-[8px] font-bold px-1.5 rounded-full">REPORT</span>
                             </div>
-                            <svg id="insight-arrow-${a.id}" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-amber-700/60 transform transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg id="insight-arrow-${a.id}" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" class="h-3 w-3 text-amber-700/60 transform transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
                         <div id="insight-content-${a.id}" class="hidden px-4 pb-4 pt-2 bg-white border-t border-amber-100">
                             <div class="text-[11px] text-slate-700 leading-relaxed whitespace-pre-line">${safeReport}</div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }
 
-            // --- 関連記事アコーディオン ---
             let relatedHtml = "";
             if (a.relatedInfo && Array.isArray(a.relatedInfo) && a.relatedInfo.length > 0) {
                 const links = a.relatedInfo.map(rel => `
                     <li class="mb-3 last:mb-0 pb-3 border-b border-slate-100 last:border-0 group">
                         <a href="${rel.URL}" target="_blank" class="flex items-start gap-2 text-blue-600 font-bold hover:text-blue-800 transition-colors block mb-1 tracking-tight">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-400 group-hover:text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" class="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-400 group-hover:text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                             </svg>
                             <span class="text-[11px] leading-tight">${rel.見出し}</span>
                         </a>
                         <p class="text-[10px] text-slate-500 leading-relaxed pl-6">${rel.内容}</p>
-                    </li>
-                `).join('');
+                    </li>`).join('');
 
                 relatedHtml = `
                     <div class="mt-4 border border-slate-200 rounded-lg overflow-hidden bg-slate-50/50">
@@ -385,15 +396,14 @@
                                 <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest italic">Related Intelligence</span>
                                 <span class="bg-blue-100 text-blue-600 text-[8px] font-bold px-1.5 rounded-full">${a.relatedInfo.length}</span>
                             </div>
-                            <svg id="arrow-${a.id}" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-slate-400 transform transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg id="arrow-${a.id}" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" class="h-3 w-3 text-slate-400 transform transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
                         <div id="related-content-${a.id}" class="hidden px-4 pb-4 pt-1 bg-white border-t border-slate-100">
                             <ul class="list-none m-0">${links}</ul>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }
 
             return `
@@ -410,12 +420,10 @@
                         <a href="${a.url}" target="_blank" class="hover:text-blue-600 transition-colors">${a.title}</a>
                     </h2>
                     <p class="text-slate-500 text-[11px] mb-3 leading-relaxed line-clamp-2 font-medium text-left">${a.displaySummary}</p>
-                    <div class="flex flex-wrap gap-1.5 mb-2">${a.category.map(cat => `<span class="tag-badge">#${cat}</span>`).join('')}</div>
-
-                    ${importantHtml}
-                    ${reportHtml}
-                    ${relatedHtml}
-
+                    <div class="flex flex-wrap gap-1.5 mb-2">${a.category.map(cat => `<span onclick="window.setSearchTerm('${cat}')" class="tag-badge cursor-pointer hover:bg-blue-100 hover:text-blue-600 transition-colors">
+            #${cat}
+        </span>`).join('')}</div>
+                    ${importantHtml} ${reportHtml} ${relatedHtml}
                     <div class="flex items-center justify-between mt-4 pt-4 border-t border-slate-50">
                         <div class="flex gap-4">
                             <button onclick="window.updateTopic('${a.id}', ${a.is_topic})" class="text-[9px] font-bold tracking-widest ${a.is_topic ? 'text-blue-600' : 'text-slate-300 hover:text-slate-500'}">${a.is_topic ? '★ TOPIC' : '☆ MARK'}</button>
@@ -428,6 +436,23 @@
     };
 
     // --- Actions ---
+// --- Actions セクションの最後（window.updateTopic の上あたりなど）に追加 ---
+window.setSearchTerm = (term) => {
+    const searchBox = document.getElementById('searchBox');
+    const topicOnly = document.getElementById('topicOnly');
+    
+    // 検索窓にタグ名をセット
+    searchBox.value = term;
+    
+    // タグ検索時は「トピックのみ」のチェックを外して全件から探せるようにする（お好みで調整してください）
+    topicOnly.checked = false;
+    
+    // 記事一覧を再描画
+    renderArticles();
+    
+    // 画面上部へスムーズにスクロール
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
     window.updateTopic = async (id, current) => {
         await updateDoc(doc(db, "articles", id), { is_topic: !current, updated_at: serverTimestamp() });
     };
@@ -474,14 +499,8 @@
                                 <button onclick="savePrompt('${name}')" class="px-3 py-1 bg-slate-950 text-white text-[9px] font-bold rounded hover:bg-black transition">SAVE ALL</button>
                             </div>
                             <div class="grid grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <label class="text-[8px] font-black text-slate-400 uppercase mb-1 block">Model Override</label>
-                                    <input id="model-${name}" type="text" value="${sectionModel}" placeholder="Default" class="w-full bg-slate-50 border border-slate-100 rounded px-2 py-1.5 text-[10px] font-mono outline-none">
-                                </div>
-                                <div>
-                                    <label class="text-[8px] font-black text-slate-400 uppercase mb-1 block">Temperature</label>
-                                    <input id="temp-${name}" type="number" step="0.1" min="0" max="2" value="${sectionTemp}" class="w-full bg-slate-50 border border-slate-100 rounded px-2 py-1.5 text-[10px] font-mono outline-none">
-                                </div>
+                                <div><label class="text-[8px] font-black text-slate-400 uppercase mb-1 block">Model Override</label><input id="model-${name}" type="text" value="${sectionModel}" placeholder="Default" class="w-full bg-slate-50 border border-slate-100 rounded px-2 py-1.5 text-[10px] font-mono outline-none"></div>
+                                <div><label class="text-[8px] font-black text-slate-400 uppercase mb-1 block">Temperature</label><input id="temp-${name}" type="number" step="0.1" min="0" max="2" value="${sectionTemp}" class="w-full bg-slate-50 border border-slate-100 rounded px-2 py-1.5 text-[10px] font-mono outline-none"></div>
                             </div>
                             <label class="text-[8px] font-black text-slate-400 uppercase mb-1 block">System Instruction</label>
                             <textarea id="prompt-${name}" rows="5" class="w-full border-none rounded-lg p-3 text-[11px] text-slate-600 bg-slate-50 outline-none leading-relaxed text-left">${cfg.prompt || ''}</textarea>
@@ -491,7 +510,6 @@
         } catch (e) { console.error(e); showToast("設定の読み込みに失敗しました"); }
     };
 
-    // --- Save Actions ---
     window.addFeedRow = (name = "", url = "") => {
         const div = document.createElement('div');
         div.className = "flex gap-2 p-2 bg-slate-50 border border-slate-100 rounded text-left";
