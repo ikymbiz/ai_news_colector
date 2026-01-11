@@ -38,8 +38,8 @@
 
 <div id="configModal" class="modal p-4">
     <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 border border-slate-200">
-        <h2 class="text-lg font-bold mb-4 text-slate-800 flex items-center gap-2 text-left">🔌 Firebase Connection</h2>
-        <textarea id="configInput" rows="6" class="w-full border border-slate-200 rounded-lg p-3 text-xs font-mono mb-4 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 text-left" placeholder='NC_v1_... または raw config'></textarea>
+        <h2 class="text-lg font-bold mb-4 text-slate-800 flex items-center gap-2">🔌 Firebase Connection</h2>
+        <textarea id="configInput" rows="6" class="w-full border border-slate-200 rounded-lg p-3 text-xs font-mono mb-4 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500" placeholder='NC_v1_... または raw config'></textarea>
         <div class="flex gap-2">
             <button id="saveConfigBtn" class="flex-grow bg-slate-950 text-white font-bold py-2 rounded-lg hover:bg-black transition text-sm">設定を保存</button>
             <button id="closeModalBtn" class="px-4 py-2 text-slate-400 font-bold text-sm">閉じる</button>
@@ -48,12 +48,12 @@
 </div>
 
 <div id="deleteConfirmModal" class="modal p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-sm w-full p-8 border border-slate-200 text-center">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 border border-slate-200 text-center">
         <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
         </div>
-        <h3 class="text-lg font-bold text-slate-800 mb-2 text-center">記事を削除しますか？</h3>
-        <p class="text-xs text-slate-400 mb-8 leading-relaxed text-center">この記事をデータベースから非表示にします。この操作は元に戻せません。</p>
+        <h3 class="text-lg font-bold text-slate-800 mb-2">記事を削除しますか？</h3>
+        <p class="text-xs text-slate-400 mb-8 leading-relaxed">この記事をデータベースから非表示にします。この操作は元に戻せません。</p>
         <div class="flex flex-col gap-2">
             <button id="executeDeleteBtn" class="w-full bg-red-600 text-white font-bold py-3 rounded-xl hover:bg-red-700 transition">削除を実行する</button>
             <button id="cancelDeleteBtn" class="w-full py-3 text-slate-400 font-bold text-sm hover:text-slate-600 transition">キャンセル</button>
@@ -62,10 +62,10 @@
 </div>
 
 <div id="news-screen">
-    <header class="bg-navy-dark py-5 px-4 md:px-8 text-white shadow-xl text-left">
-        <div class="max-w-4xl mx-auto flex justify-between items-center text-left">
-            <div class="text-left">
-                <h1 class="text-lg font-bold tracking-tight text-white">AI News <span class="text-blue-400 font-black">Database</span></h1>
+    <header class="bg-navy-dark py-5 px-4 md:px-8 text-white shadow-xl">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-lg font-bold tracking-tight">AI News <span class="text-blue-400 font-black">Database</span></h1>
                 <p class="text-[8px] text-slate-500 font-bold uppercase tracking-[0.3em] mt-0.5">INTELLIGENT NEWS ARCHIVE</p>
             </div>
             <div class="flex items-center gap-3">
@@ -79,7 +79,7 @@
         </div>
     </header>
 
-    <div class="max-w-4xl mx-auto p-4 text-left">
+    <div class="max-w-4xl mx-auto p-4">
         <div class="bg-white p-2 rounded-lg shadow-sm mb-5 flex gap-3 items-center border border-slate-200">
             <input type="text" id="searchBox" placeholder="キーワード検索..." class="flex-grow bg-transparent border-none px-3 py-1 text-sm outline-none placeholder:text-slate-300">
             <label class="flex items-center gap-2 px-3 py-1 text-[11px] text-slate-500 font-bold border-l border-slate-100 cursor-pointer">
@@ -87,7 +87,7 @@
             </label>
         </div>
 
-        <div id="articles-container" class="space-y-4 text-left">
+        <div id="articles-container" class="space-y-4">
             <div class="text-center py-20 text-slate-300 text-sm italic animate-pulse font-medium">読み込み中...</div>
         </div>
 
@@ -95,21 +95,34 @@
             <div id="loader-spinner" class="w-5 h-5 border-2 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
             <span id="loader-text" class="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em]">Synchronizing Database</span>
             <div class="mt-1 text-[9px] font-bold text-slate-300 tracking-[0.1em] uppercase">
-                © AI News Database, 2025
+                © AI News Database, 2026
             </div>
         </div>
     </div>
 </div>
 
 <div id="settings-screen">
-    <div class="max-w-4xl mx-auto p-6 md:p-10 text-left">
+    <div class="max-w-4xl mx-auto p-6 md:p-10">
         <div class="flex justify-between items-center mb-8 pb-4 border-b border-slate-200">
             <h2 class="text-xl font-bold text-slate-800 italic uppercase tracking-tighter">System Settings</h2>
             <button onclick="closeSettings()" class="px-5 py-2 bg-slate-950 text-white rounded-lg font-bold text-xs hover:bg-black transition">戻る</button>
         </div>
 
         <div class="mb-8 bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-            <h3 class="text-xs font-black text-slate-400 mb-5 uppercase tracking-widest italic text-left">📰 Feed Management</h3>
+            <h3 class="text-xs font-black text-slate-400 mb-5 uppercase tracking-widest italic">🚀 System Actions</h3>
+            <div class="flex items-center gap-4">
+                <button id="execButton" class="px-5 py-2 bg-blue-600 text-white rounded-lg font-bold text-xs hover:bg-blue-700 transition">
+                    GCS同期を実行
+                </button>
+                <span id="result" class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Ready</span>
+            </div>
+            <p class="mt-2 text-[9px] text-slate-400 leading-relaxed">
+                Firestoreの最新データをJSONとしてGoogle Cloud Storageへ保存します。
+            </p>
+        </div>
+
+        <div class="mb-8 bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <h3 class="text-xs font-black text-slate-400 mb-5 uppercase tracking-widest italic">📰 Feed Management</h3>
             <div id="rss-list" class="space-y-2"></div>
             <div class="mt-6 flex justify-between items-center">
                 <button onclick="addFeedRow()" class="text-[10px] font-bold text-blue-600 hover:underline">＋ 新規フィード追加</button>
@@ -118,30 +131,30 @@
         </div>
 
         <div class="mb-8 bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-            <h3 class="text-xs font-black text-slate-400 mb-5 uppercase tracking-widest italic text-left">🧠 AI Orchestration</h3>
-            <div class="mb-6 pb-6 border-b border-slate-50 text-left">
+            <h3 class="text-xs font-black text-slate-400 mb-5 uppercase tracking-widest italic">🧠 AI Orchestration</h3>
+            <div class="mb-6 pb-6 border-b border-slate-50">
                 <label class="text-[10px] font-bold text-slate-800 block mb-2 uppercase tracking-tighter">Default System Model</label>
-                <div class="flex gap-2 text-left">
+                <div class="flex gap-2">
                     <input id="root-model" type="text" placeholder="e.g. gpt-4o-mini" class="flex-grow bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs font-mono outline-none">
                     <button onclick="saveRootModel()" class="px-4 py-2 bg-slate-800 text-white rounded font-bold text-[10px]">保存</button>
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                     <div class="flex justify-between mb-2"><span class="text-[10px] font-bold uppercase">Skip Categories</span><button onclick="saveList('skip_categories')" class="text-[10px] text-blue-600 font-bold">SAVE</button></div>
-                    <textarea id="list-skip_categories" rows="4" class="w-full border border-slate-200 rounded p-2 text-[10px] font-mono bg-slate-50 outline-none focus:ring-1 focus:ring-blue-100 text-left"></textarea>
+                    <textarea id="list-skip_categories" rows="4" class="w-full border border-slate-200 rounded p-2 text-[10px] font-mono bg-slate-50 outline-none focus:ring-1 focus:ring-blue-100"></textarea>
                 </div>
                 <div>
                     <div class="flex justify-between mb-2"><span class="text-[10px] font-bold uppercase">Skip Feeds</span><button onclick="saveList('skip_feeds')" class="text-[10px] text-blue-600 font-bold">SAVE</button></div>
-                    <textarea id="list-skip_feeds" rows="4" class="w-full border border-slate-200 rounded p-2 text-[10px] font-mono bg-slate-50 outline-none focus:ring-1 focus:ring-blue-100 text-left"></textarea>
+                    <textarea id="list-skip_feeds" rows="4" class="w-full border border-slate-200 rounded p-2 text-[10px] font-mono bg-slate-50 outline-none focus:ring-1 focus:ring-blue-100"></textarea>
                 </div>
                 <div>
                     <div class="flex justify-between mb-2"><span class="text-[10px] font-bold uppercase">Override Tags</span><button onclick="saveList('override_categories')" class="text-[10px] text-blue-600 font-bold">SAVE</button></div>
-                    <textarea id="list-override_categories" rows="4" class="w-full border border-slate-200 rounded p-2 text-[10px] font-mono bg-slate-50 outline-none focus:ring-1 focus:ring-blue-100 text-left"></textarea>
+                    <textarea id="list-override_categories" rows="4" class="w-full border border-slate-200 rounded p-2 text-[10px] font-mono bg-slate-50 outline-none focus:ring-1 focus:ring-blue-100"></textarea>
                 </div>
             </div>
         </div>
-        <div id="prompts-container" class="space-y-4 text-left"></div>
+        <div id="prompts-container" class="space-y-4"></div>
     </div>
 </div>
 
@@ -152,10 +165,10 @@
     let db = null;
     let allArticles = [];
     let pendingDeleteId = null;
-    let currentLimit = 30; // 初回読み込み件数
+    let currentLimit = 30;
     let unsubscribe = null;
     let isFetching = false;
-    let hasMore = true; // 追加データがあるかどうかの判定用
+    let hasMore = true;
 
     const modal = document.getElementById('configModal');
     const deleteModal = document.getElementById('deleteConfirmModal');
@@ -166,14 +179,12 @@
     const loaderSpinner = document.getElementById('loader-spinner');
     const loaderText = document.getElementById('loader-text');
 
-    // --- Toast ---
     const showToast = (msg) => {
         const t = document.getElementById('toast'); t.innerText = msg;
         t.classList.replace('translate-y-20', 'translate-y-0'); t.classList.replace('opacity-0', 'opacity-100');
         setTimeout(() => { t.classList.replace('translate-y-0', 'translate-y-20'); t.classList.replace('opacity-100', 'opacity-0'); }, 3000);
     };
 
-    // --- UI Controls ---
     window.openSettings = () => {
         document.getElementById('news-screen').style.display = 'none';
         document.getElementById('settings-screen').classList.add('active');
@@ -184,24 +195,18 @@
         document.getElementById('settings-screen').classList.remove('active');
     };
 
-    // --- アコーディオンの開閉制御 ---
     window.toggleRelated = (id) => {
         const content = document.getElementById(`related-content-${id}`);
         const arrow = document.getElementById(`arrow-${id}`);
-        if (!content || !arrow) return;
-        content.classList.toggle('hidden');
-        arrow.classList.toggle('rotate-180');
+        if (content) { content.classList.toggle('hidden'); arrow.classList.toggle('rotate-180'); }
     };
 
     window.toggleInsight = (id) => {
         const content = document.getElementById(`insight-content-${id}`);
         const arrow = document.getElementById(`insight-arrow-${id}`);
-        if (!content || !arrow) return;
-        content.classList.toggle('hidden');
-        arrow.classList.toggle('rotate-180');
+        if (content) { content.classList.toggle('hidden'); arrow.classList.toggle('rotate-180'); }
     };
 
-    // --- Firebase Logic ---
     const decodeToken = (token) => {
         if (!token || !token.startsWith("NC_v1_")) return token;
         try {
@@ -215,9 +220,7 @@
         if (!s) return "";
         let t = String(s).trim();
         if (t.startsWith("```")) {
-            t = t.replace(/^```[a-zA-Z]*\s*/m, "");
-            t = t.replace(/```$/m, "");
-            t = t.trim();
+            t = t.replace(/^```[a-zA-Z]*\s*/m, "").replace(/```$/m, "").trim();
         }
         return t;
     };
@@ -251,58 +254,42 @@
 
         unsubscribe = onSnapshot(q, (snapshot) => {
             const docs = snapshot.docs;
-
-            if (docs.length < currentLimit) {
-                hasMore = false;
+            hasMore = docs.length >= currentLimit;
+            
+            if (!hasMore) {
                 loaderSpinner.style.display = 'none';
                 loaderText.innerText = "End of Database";
-                loaderText.classList.replace('text-slate-400', 'text-slate-300');
-            } else {
-                hasMore = true;
-                loaderSpinner.style.display = 'block';
-                loaderText.innerText = "Synchronizing Database";
             }
 
             allArticles = docs.map(d => {
                 const data = d.data();
-                
-                // --- カテゴリーの解析ロジックを強化 ---
                 let categories = [];
                 let rawCategory = data.category;
 
-                if (Array.isArray(rawCategory)) {
-                    // すでに配列ならそのまま
-                    categories = rawCategory;
-                } else if (typeof rawCategory === 'string') {
+                if (Array.isArray(rawCategory)) categories = rawCategory;
+                else if (typeof rawCategory === 'string') {
                     const trimmed = rawCategory.trim();
                     if (trimmed.startsWith('{')) {
-                        // JSON文字列（画像の状態）ならパースする
                         try {
                             const parsed = JSON.parse(trimmed);
-                            // {"category": [...]} または {"categories": [...]} の中身を取得
                             categories = parsed.category || parsed.categories || [];
-                        } catch (e) {
-                            categories = [trimmed]; // パース失敗時は文字列として保持
-                        }
+                        } catch (e) { categories = [trimmed]; }
                     } else if (trimmed !== "") {
-                        // 通常のカンマ区切り文字列の場合
                         categories = trimmed.split(/[,、\s]+/).map(c => c.trim());
                     }
                 }
 
                 const rawImp = sanitizeJsonString((data.important || "").trim());
-                let impInfo = null;
-                if (rawImp.startsWith('{')) { try { impInfo = JSON.parse(rawImp); } catch(e) {} }
+                let impInfo = null; if (rawImp.startsWith('{')) { try { impInfo = JSON.parse(rawImp); } catch(e) {} }
 
                 const rawRelated = sanitizeJsonString((data.related || "").trim());
-                let relatedInfo = null;
-                if (rawRelated.startsWith('[')) { try { relatedInfo = JSON.parse(rawRelated); } catch(e) {} }
+                let relatedInfo = null; if (rawRelated.startsWith('[')) { try { relatedInfo = JSON.parse(rawRelated); } catch(e) {} }
 
                 return {
                     id: d.id, ...data,
                     title: (data.title || "Untitled").replace(/<[^>]*>?/gm, ''),
                     displaySummary: (data.summary || data.report || data.body || "").replace(/<[^>]*>?/gm, ''),
-                    category: Array.isArray(categories) ? categories : [categories], // 必ず配列にする
+                    category: Array.isArray(categories) ? categories : [categories],
                     importantInfo: impInfo,
                     relatedInfo: relatedInfo,
                     is_deleted: data.is_deleted || false,
@@ -312,19 +299,13 @@
 
             renderArticles();
             isFetching = false;
-        }, (error) => {
-            console.error("Snapshot error:", error);
-            isFetching = false;
         });
     };
 
     const initInfiniteScroll = () => {
         const observer = new IntersectionObserver((entries) => {
-            // 下端に到達し、かつ読み込み中でなく、まだ続きがある場合
             if (entries[0].isIntersecting && !isFetching && hasMore) {
-                isFetching = true;
-                currentLimit += 30;
-                startListening();
+                isFetching = true; currentLimit += 30; startListening();
             }
         }, { threshold: 0.1, rootMargin: '100px' });
         observer.observe(document.getElementById('sentinel'));
@@ -334,31 +315,28 @@
         const searchTerm = document.getElementById('searchBox').value.toLowerCase();
         const topicOnly = document.getElementById('topicOnly').checked;
         const filtered = allArticles.filter(a => {
-            const content = (a.title + a.displaySummary + a.category.join('')).toLowerCase();
-            return content.includes(searchTerm) && (topicOnly ? a.is_topic : true);
+            const searchTargets = (a.title + a.displaySummary + a.category.join('') + (a.report || "")).toLowerCase();
+            return searchTargets.includes(searchTerm) && (topicOnly ? a.is_topic : true);
         });
+
         if (filtered.length === 0) {
             container.innerHTML = `<div class="py-20 text-center text-slate-300 text-xs tracking-widest uppercase italic font-bold">No Records Found</div>`;
             return;
         }
+
         container.innerHTML = filtered.map(a => {
             let domain = ""; try { domain = new URL(a.url).hostname; } catch(e) {}
-
             let importantHtml = "";
             if (a.importantInfo && a.importantInfo.flag) {
                 const detail = a.importantInfo.articles?.[0] || {};
-                importantHtml = `
-                    <div class="important-box text-left">
-                        <div class="font-bold leading-snug text-slate-900 text-xs mb-1 tracking-tight">
-                            📌 ${detail.extraction_reason || 'AI要約あり'}
-                        </div>
-                    </div>`;
+                importantHtml = `<div class="important-box">
+                    <div class="font-bold leading-snug text-slate-900 text-xs mb-1 tracking-tight">📌 ${detail.extraction_reason || 'AI要約あり'}</div>
+                </div>`;
             }
 
             let reportHtml = "";
             const reportText = (a.report || "").trim();
             if (a.is_topic && reportText) {
-                const safeReport = reportText.replace(/</g, "&lt;").replace(/>/g, "&gt;");
                 reportHtml = `
                     <div class="mt-4 border border-amber-200 rounded-lg overflow-hidden bg-amber-50/60">
                         <button onclick="window.toggleInsight('${a.id}')" class="w-full flex justify-between items-center px-4 py-2.5 hover:bg-amber-50 transition-colors">
@@ -366,13 +344,9 @@
                                 <span class="text-[9px] font-black text-amber-700 uppercase tracking-widest italic">Strategic Insight</span>
                                 <span class="bg-amber-200/60 text-amber-800 text-[8px] font-bold px-1.5 rounded-full">REPORT</span>
                             </div>
-                            <svg id="insight-arrow-${a.id}" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" class="h-3 w-3 text-amber-700/60 transform transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
+                            <svg id="insight-arrow-${a.id}" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" class="h-3 w-3 text-amber-700/60 transform transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                         </button>
-                        <div id="insight-content-${a.id}" class="hidden px-4 pb-4 pt-2 bg-white border-t border-amber-100">
-                            <div class="text-[11px] text-slate-700 leading-relaxed whitespace-pre-line">${safeReport}</div>
-                        </div>
+                        <div id="insight-content-${a.id}" class="hidden px-4 pb-4 pt-2 bg-white border-t border-amber-100 text-[11px] text-slate-700 leading-relaxed whitespace-pre-line">${reportText.replace(/</g, "&lt;")}</div>
                     </div>`;
             }
 
@@ -381,9 +355,7 @@
                 const links = a.relatedInfo.map(rel => `
                     <li class="mb-3 last:mb-0 pb-3 border-b border-slate-100 last:border-0 group">
                         <a href="${rel.URL}" target="_blank" class="flex items-start gap-2 text-blue-600 font-bold hover:text-blue-800 transition-colors block mb-1 tracking-tight">
-                            <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" class="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-400 group-hover:text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
+                            <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" class="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-400 group-hover:text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                             <span class="text-[11px] leading-tight">${rel.見出し}</span>
                         </a>
                         <p class="text-[10px] text-slate-500 leading-relaxed pl-6">${rel.内容}</p>
@@ -396,19 +368,15 @@
                                 <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest italic">Related Intelligence</span>
                                 <span class="bg-blue-100 text-blue-600 text-[8px] font-bold px-1.5 rounded-full">${a.relatedInfo.length}</span>
                             </div>
-                            <svg id="arrow-${a.id}" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" class="h-3 w-3 text-slate-400 transform transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
+                            <svg id="arrow-${a.id}" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" class="h-3 w-3 text-slate-400 transform transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                         </button>
-                        <div id="related-content-${a.id}" class="hidden px-4 pb-4 pt-1 bg-white border-t border-slate-100">
-                            <ul class="list-none m-0">${links}</ul>
-                        </div>
+                        <div id="related-content-${a.id}" class="hidden px-4 pb-4 pt-1 bg-white border-t border-slate-100"><ul class="list-none m-0">${links}</ul></div>
                     </div>`;
             }
 
             return `
-            <article class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden text-left ${a.is_topic ? 'is-topic' : ''}">
-                <div class="p-5 text-left">
+            <article class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden ${a.is_topic ? 'is-topic' : ''}">
+                <div class="p-5">
                     <div class="flex justify-between items-center mb-2">
                         <div class="flex items-center gap-2">
                             <span class="text-[8px] font-black text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded tracking-widest uppercase">${a.source || 'FEED'}</span>
@@ -416,13 +384,11 @@
                         </div>
                         <span class="text-[9px] text-slate-400 font-bold">${a.published_at ? new Date(a.published_at.seconds * 1000).toLocaleDateString('ja-JP') : ''}</span>
                     </div>
-                    <h2 class="text-base font-bold text-slate-900 mb-1.5 leading-snug tracking-tight text-left">
+                    <h2 class="text-base font-bold text-slate-900 mb-1.5 leading-snug tracking-tight">
                         <a href="${a.url}" target="_blank" class="hover:text-blue-600 transition-colors">${a.title}</a>
                     </h2>
-                    <p class="text-slate-500 text-[11px] mb-3 leading-relaxed line-clamp-2 font-medium text-left">${a.displaySummary}</p>
-                    <div class="flex flex-wrap gap-1.5 mb-2">${a.category.map(cat => `<span onclick="window.setSearchTerm('${cat}')" class="tag-badge cursor-pointer hover:bg-blue-100 hover:text-blue-600 transition-colors">
-            #${cat}
-        </span>`).join('')}</div>
+                    <p class="text-slate-500 text-[11px] mb-3 leading-relaxed line-clamp-2 font-medium">${a.displaySummary}</p>
+                    <div class="flex flex-wrap gap-1.5 mb-2">${a.category.map(cat => `<span onclick="window.setSearchTerm('${cat}')" class="tag-badge cursor-pointer hover:bg-blue-100 hover:text-blue-600 transition-colors">#${cat}</span>`).join('')}</div>
                     ${importantHtml} ${reportHtml} ${relatedHtml}
                     <div class="flex items-center justify-between mt-4 pt-4 border-t border-slate-50">
                         <div class="flex gap-4">
@@ -435,38 +401,28 @@
         }).join('');
     };
 
-    // --- Actions ---
-// --- Actions セクションの最後（window.updateTopic の上あたりなど）に追加 ---
-window.setSearchTerm = (term) => {
-    const searchBox = document.getElementById('searchBox');
-    const topicOnly = document.getElementById('topicOnly');
-    
-    // 検索窓にタグ名をセット
-    searchBox.value = term;
-    
-    // タグ検索時は「トピックのみ」のチェックを外して全件から探せるようにする（お好みで調整してください）
-    topicOnly.checked = false;
-    
-    // 記事一覧を再描画
-    renderArticles();
-    
-    // 画面上部へスムーズにスクロール
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-};
+    window.setSearchTerm = (term) => {
+        const searchBox = document.getElementById('searchBox');
+        searchBox.value = term;
+        document.getElementById('topicOnly').checked = false;
+        renderArticles();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     window.updateTopic = async (id, current) => {
         await updateDoc(doc(db, "articles", id), { is_topic: !current, updated_at: serverTimestamp() });
     };
+
     window.confirmDelete = (id) => { pendingDeleteId = id; deleteModal.style.display = 'flex'; };
-    document.getElementById('cancelDeleteBtn').onclick = () => { deleteModal.style.display = 'none'; pendingDeleteId = null; };
+    document.getElementById('cancelDeleteBtn').onclick = () => { deleteModal.style.display = 'none'; };
     document.getElementById('executeDeleteBtn').onclick = async () => {
         if (pendingDeleteId && db) {
             await updateDoc(doc(db, "articles", pendingDeleteId), { is_deleted: true, updated_at: serverTimestamp() });
             showToast("記事を削除しました");
         }
-        deleteModal.style.display = 'none'; pendingDeleteId = null;
+        deleteModal.style.display = 'none';
     };
 
-    // --- Settings Engine ---
     window.loadSettings = async () => {
         if (!db) return;
         try {
@@ -480,8 +436,7 @@ window.setSearchTerm = (term) => {
             }
             if (promptSnap.exists()) {
                 const data = promptSnap.data();
-                const rootInp = document.getElementById('root-model');
-                if(rootInp) rootInp.value = data.model || '';
+                if(document.getElementById('root-model')) document.getElementById('root-model').value = data.model || '';
                 ['skip_categories', 'skip_feeds', 'override_categories'].forEach(key => {
                     const el = document.getElementById(`list-${key}`);
                     if (el) el.value = (data[key] || []).join('\n');
@@ -490,32 +445,31 @@ window.setSearchTerm = (term) => {
                 const sections = ["is_AI","category","important","summary","related","report","mail_summary","ai_filter"];
                 sections.forEach(name => {
                     const cfg = data[name] || {};
-                    const sectionModel = cfg.model || "";
-                    const sectionTemp = (cfg.temperature !== undefined) ? cfg.temperature : 0.2;
                     promptsContainer.insertAdjacentHTML('beforeend', `
                         <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm mb-4">
-                            <div class="flex justify-between items-center mb-4 text-left">
+                            <div class="flex justify-between items-center mb-4">
                                 <h4 class="font-bold text-slate-800 text-[10px] uppercase tracking-widest italic">${name}</h4>
                                 <button onclick="savePrompt('${name}')" class="px-3 py-1 bg-slate-950 text-white text-[9px] font-bold rounded hover:bg-black transition">SAVE ALL</button>
                             </div>
                             <div class="grid grid-cols-2 gap-4 mb-4">
-                                <div><label class="text-[8px] font-black text-slate-400 uppercase mb-1 block">Model Override</label><input id="model-${name}" type="text" value="${sectionModel}" placeholder="Default" class="w-full bg-slate-50 border border-slate-100 rounded px-2 py-1.5 text-[10px] font-mono outline-none"></div>
-                                <div><label class="text-[8px] font-black text-slate-400 uppercase mb-1 block">Temperature</label><input id="temp-${name}" type="number" step="0.1" min="0" max="2" value="${sectionTemp}" class="w-full bg-slate-50 border border-slate-100 rounded px-2 py-1.5 text-[10px] font-mono outline-none"></div>
+                                <div><label class="text-[8px] font-black text-slate-400 uppercase mb-1 block">Model Override</label><input id="model-${name}" type="text" value="${cfg.model || ''}" placeholder="Default" class="w-full bg-slate-50 border border-slate-100 rounded px-2 py-1.5 text-[10px] font-mono outline-none"></div>
+                                <div><label class="text-[8px] font-black text-slate-400 uppercase mb-1 block">Temperature</label><input id="temp-${name}" type="number" step="0.1" min="0" max="2" value="${cfg.temperature ?? 0.2}" class="w-full bg-slate-50 border border-slate-100 rounded px-2 py-1.5 text-[10px] font-mono outline-none"></div>
                             </div>
                             <label class="text-[8px] font-black text-slate-400 uppercase mb-1 block">System Instruction</label>
-                            <textarea id="prompt-${name}" rows="5" class="w-full border-none rounded-lg p-3 text-[11px] text-slate-600 bg-slate-50 outline-none leading-relaxed text-left">${cfg.prompt || ''}</textarea>
+                            <textarea id="prompt-${name}" rows="5" class="w-full border-none rounded-lg p-3 text-[11px] text-slate-600 bg-slate-50 outline-none leading-relaxed">${cfg.prompt || ''}</textarea>
                         </div>`);
                 });
             }
-        } catch (e) { console.error(e); showToast("設定の読み込みに失敗しました"); }
+        } catch (e) { showToast("設定の読み込みに失敗しました"); }
     };
 
     window.addFeedRow = (name = "", url = "") => {
         const div = document.createElement('div');
-        div.className = "flex gap-2 p-2 bg-slate-50 border border-slate-100 rounded text-left";
+        div.className = "flex gap-2 p-2 bg-slate-50 border border-slate-100 rounded";
         div.innerHTML = `<input type="text" name="f-name" value="${name}" placeholder="Name" class="flex-1 border-none rounded px-2 py-1.5 text-[11px] outline-none shadow-sm"><input type="url" name="f-url" value="${url}" placeholder="URL" class="flex-[2] border-none rounded px-2 py-1.5 text-[11px] font-mono outline-none shadow-sm"><button onclick="this.parentElement.remove()" class="text-slate-300 hover:text-red-500 px-1 text-xs">✕</button>`;
         rssList.appendChild(div);
     };
+
     window.saveAllRss = async () => {
         const feeds = Array.from(rssList.querySelectorAll('div')).map(row => ({
             name: row.querySelector("input[name='f-name']").value.trim(),
@@ -524,17 +478,20 @@ window.setSearchTerm = (term) => {
         await setDoc(doc(db, "configs", "rss_sources"), { feeds }, { merge: true });
         showToast("✅ RSSを保存しました");
     };
+
     window.saveRootModel = async () => {
         const model = document.getElementById('root-model').value.trim();
         await setDoc(doc(db, "configs", "prompt"), { model }, { merge: true });
-        showToast("✅ デフォルトモデル設定を保存しました");
+        showToast("✅ デフォルトモデルを保存しました");
     };
+
     window.saveList = async (key) => {
         const val = document.getElementById(`list-${key}`).value.split('\n').filter(l => l.trim());
         const d = {}; d[key] = val;
         await setDoc(doc(db, "configs", "prompt"), d, { merge: true });
         showToast(`✅ ${key} を更新しました`);
     };
+
     window.savePrompt = async (name) => {
         const prompt = document.getElementById(`prompt-${name}`).value;
         const model = document.getElementById(`model-${name}`).value.trim();
@@ -544,7 +501,6 @@ window.setSearchTerm = (term) => {
         showToast(`✅ ${name} の設定を保存しました`);
     };
 
-    // --- Init ---
     document.getElementById('saveConfigBtn').onclick = () => {
         const val = document.getElementById('configInput').value.trim();
         if (val) { localStorage.setItem('firebase_config', val); location.reload(); }
@@ -556,6 +512,29 @@ window.setSearchTerm = (term) => {
     document.getElementById('closeModalBtn').onclick = () => modal.style.display = 'none';
     document.getElementById('searchBox').oninput = renderArticles;
     document.getElementById('topicOnly').onchange = renderArticles;
+
+    // GCS Sync Trigger
+    const syncButton = document.getElementById('execButton');
+    if (syncButton) {
+        syncButton.addEventListener('click', async () => {
+            const url = 'https://deploy-news-html-23728484987.asia-northeast1.run.app';
+            const resEl = document.getElementById('result');
+            syncButton.disabled = true; syncButton.classList.add('opacity-50');
+            resEl.innerText = 'RUNNING...'; resEl.className = 'text-[10px] font-bold text-blue-500 uppercase';
+
+            try {
+                const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trigger: 'manual_sync' }) });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                resEl.innerText = 'SUCCESS'; resEl.className = 'text-[10px] font-bold text-green-500 uppercase';
+                showToast("✅ GCS同期が完了しました");
+            } catch (error) {
+                resEl.innerText = 'FAILED'; resEl.className = 'text-[10px] font-bold text-red-500 uppercase';
+                showToast("❌ 同期エラーが発生しました");
+            } finally {
+                syncButton.disabled = false; syncButton.classList.remove('opacity-50');
+            }
+        });
+    }
 
     initApp();
 </script>
